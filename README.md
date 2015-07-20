@@ -2,7 +2,8 @@ There are two html pages.
 
 1.  index.html
     - This page take data of employee and store into pouchdb and then replicate it to the local couchdb.
-  	- Code in app.js
+    - If you have installed couchdb locally then just run this page and enter employee data in it.
+    - Code in app.js
   	
 2.  ReadData.html
     - This page replicate employee data from local couch to pouchdb.
