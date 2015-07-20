@@ -13,5 +13,5 @@ There are two html pages.
 3.  Problem:
   	- Problem is in app2.js file on line no: 115 in outgoing function.
   	- i am not able to identify how transform-pouch output function is getting alredy decrypted data.
-  	- just comment 118,125,126,127 in app2.js file then you will identify error.
+  	- just comment line no 118,125,126,127 in app2.js file then you will find error.
 	    
