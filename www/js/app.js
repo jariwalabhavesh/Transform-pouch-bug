@@ -34,7 +34,7 @@ exampleApp.service('offlinedataService', function($state, $rootScope) {
             service.localDB = new PouchDB(databaseName, {auto_compaction: true});
         } catch (err) {
         }
-        var remoteDBStr = "http://172.24.105.60:5984/" + databaseName;
+        var remoteDBStr = "http://172.24.105.60:5984/" + databaseName; //replace ip with localhost or localhost ip address
         try {
             service.remoteDB = new PouchDB(remoteDBStr);
 
