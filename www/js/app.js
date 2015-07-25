@@ -17,8 +17,61 @@ var exampleApp = angular.module('starter', ['ionic'])
                 }
             });
         });
+exampleApp.service("CipherService", function() {
 
-exampleApp.service('offlinedataService', function($state, $rootScope) {
+    this.encrypt = function(message, password) {
+        var salt;
+        var iv;
+        if (localStorage["startUpdata"]) {
+            var dt = JSON.parse(localStorage.getItem("startUpdata"));
+            salt = forge.util.decode64(dt.salt);
+            iv = forge.util.decode64(dt.iv);
+        } else {
+            salt = forge.random.getBytesSync(128);
+            iv = forge.random.getBytesSync(16);
+            var dt = {
+                salt: forge.util.encode64(salt),
+                iv: forge.util.encode64(iv)
+            };
+            localStorage.setItem("startUpdata", JSON.stringify(dt));
+        }
+        var key = forge.pkcs5.pbkdf2(password, salt, 4, 16);
+        var cipher = forge.cipher.createCipher('AES-CBC', key);
+        cipher.start({iv: iv});
+        cipher.update(forge.util.createBuffer(message));
+        cipher.finish();
+        var cipherText = forge.util.encode64(cipher.output.getBytes());
+        return cipherText;
+
+    };
+
+
+    this.decrypt = function(cipherText, password) {
+        var salt;
+        var iv;
+        if (localStorage["startUpdata"]) {
+            var dt = JSON.parse(localStorage.getItem("startUpdata"));
+            salt = dt.salt;
+            iv = dt.iv;
+        } else {
+            salt = forge.random.getBytesSync(128);
+            iv = forge.random.getBytesSync(16);
+            var dt = {
+                salt: forge.util.encode64(salt),
+                iv: forge.util.encode64(iv)
+            };
+            localStorage.setItem("startUpdata", JSON.stringify(dt));
+        }
+        var key = forge.pkcs5.pbkdf2(password, forge.util.decode64(salt), 4, 16);
+        var decipher = forge.cipher.createDecipher('AES-CBC', key);
+        decipher.start({iv: forge.util.decode64(iv)});
+        decipher.update(forge.util.createBuffer(forge.util.decode64(cipherText)));
+        decipher.finish();
+        return decipher.output.toString();
+    };
+});
+        
+exampleApp.service('offlinedataService', function($state, $rootScope, CipherService) {
 
     var service = this;
     this.localDB;
@@ -26,15 +79,48 @@ exampleApp.service('offlinedataService', function($state, $rootScope) {
     this.localChanges;
     this.rep;
 
+    this.isJsonObject = function(jsonData) {
+        try {
+            JSON.stringify(jsonData);
+        } catch (e) {
+            return false;
+        }
+        return true;
+    };
+
+    this.isJsonString = function(jsonString) {
+        try {
+            JSON.parse(jsonString);
+        } catch (e) {
+            return false;
+        }
+        return true;
+    };
+
+    var transformFunctions = {
+        incoming: function(doc) {
+            Object.keys(doc).forEach(function(field) {
+                if (field !== '_id' && field !== '_rev' && field !== '_revisions') {
+                    if (service.isJsonObject(doc[field])) {
+                        doc[field] = CipherService.encrypt(JSON.stringify(doc[field]), "1234");
+                    } else {
+                        doc[field] = CipherService.encrypt(doc[field], "1234");
+                    }
+                }
+            });
+            return doc;
+        }
+    };
 
     this.storeOffLineData = function(databaseName) {
 
 
         try {
             service.localDB = new PouchDB(databaseName, {auto_compaction: true});
+            service.localDB.transform(transformFunctions);
         } catch (err) {
         }
-        var remoteDBStr = "http://172.24.105.60:5984/" + databaseName; //replace ip with localhost or localhost ip address
+        var remoteDBStr = "http://127.0.0.1:5984/" + databaseName; //replace ip with localhost or localhost ip address
         try {
             service.remoteDB = new PouchDB(remoteDBStr);
 
