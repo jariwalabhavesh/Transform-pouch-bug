@@ -123,7 +123,7 @@ exampleApp.service('offlinedataService', function($state, $rootScope, CipherServ
                             doc[field] = decData;
                         }
                     } catch (e) {                   //comment this line
-                        console.log("e:= " + e);    //comment this line
+                        console.error("e:= " + e);    //comment this line
                     }                               //comment this line
                 }
             });
